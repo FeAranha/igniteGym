@@ -1,5 +1,5 @@
 # Layout
-![Capa](https://user-images.githubusercontent.com/28874783/227636882-0be68e1e-cfe5-45cd-ad92-d8afdd06372b.png)
+![Capa](https://user-images.githubusercontent.com/28874783/227637285-fbc4774d-25ea-4560-bbce-93ed11f0a43e.png)
 
 # Setup
 - npm i
