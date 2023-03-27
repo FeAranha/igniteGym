@@ -4,3 +4,7 @@
 # Setup
 - npm i
 - npx expo start
+
+# Techs
+- expo
+- NativeBase
