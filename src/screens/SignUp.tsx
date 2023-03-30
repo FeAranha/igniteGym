@@ -1,4 +1,4 @@
-import { Alert } from "react-native";
+import { useState } from "react";
 import {
   VStack,
   Image,
@@ -18,6 +18,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { api } from "@services/api";
 import { AppError } from "@utils/AppError";
+import { useAuth } from '@hooks/useAuth';
 
 type FormDataProps = {
   name: string;
@@ -40,7 +41,10 @@ const signUpSchema = yup.object({
 });
 
 export function SignUp() {
+  const [isLoading, setIsLoading] = useState(false);
+
   const toast = useToast();
+  const { singIn } = useAuth();
 
   const {
     control,
@@ -57,9 +61,13 @@ export function SignUp() {
 
   async function handleSignUp({ name, email, password }: FormDataProps) {
     try {
-      const response = await api.post("/users", { name, email, password });
-      console.log(response.data);
+      setIsLoading(true)
+
+      await api.post('/users', { name, email, password });
+      await singIn(email, password)
+    
     } catch (error) {
+      setIsLoading(false); 
       const isAppError = error instanceof AppError;
 
       const title = isAppError
@@ -161,6 +169,7 @@ export function SignUp() {
           <Button
             title="Criar e acessar"
             onPress={handleSubmit(handleSignUp)}
+            isLoading={isLoading}
           />
         </Center>
 
