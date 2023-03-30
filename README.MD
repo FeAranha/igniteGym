@@ -8,3 +8,4 @@
 # Techs
 - expo
 - NativeBase
+- Axios
