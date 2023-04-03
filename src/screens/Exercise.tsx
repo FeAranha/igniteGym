@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
 import {
   Box,
@@ -9,7 +9,6 @@ import {
   Text,
   useToast,
   VStack,
-  ScrollView,
 } from "native-base";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -21,13 +20,16 @@ import BodySvg from "@assets/body.svg";
 import SeriesSvg from "@assets/series.svg";
 import RepetitionsSvg from "@assets/repetitions.svg";
 import { Button } from "@components/Button";
+import { Loading } from "@components/Loading";
 
 type RouteParamsProps = {
   exerciseId: string;
 };
 
 export function Exercise() {
-  const [exercisePlus, setExercise] = React.useState<ExerciseDTO>({} as ExerciseDTO)
+  const [sendingRegister, setSendingRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [exercisePlus, setExercise] = React.useState<ExerciseDTO>({} as ExerciseDTO);
   const navigation = useNavigation<AppNavigatorRoutesProps>();
 
   const route = useRoute();
@@ -39,8 +41,36 @@ export function Exercise() {
     navigation.goBack();
   }
 
+  async function handleExerciseHistoryRegister(){
+    try {
+      setSendingRegister(true);
+
+      await api.post('/history', { exercise_id: exerciseId });
+
+      toast.show({
+        title: 'Parabéns! Exercício registrado no seu histórico.',
+        placement: 'top',
+        bgColor: 'green.500'
+      });
+
+      navigation.navigate('history');
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : 'Não foi possível registrar exercício.';
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500'
+      })
+    } finally {
+      setSendingRegister(false);
+    }
+  }
+
   async function fetchExerciseDetails() {
     try {
+      setIsLoading(true);
       const response = await api.get(`/exercises/${exerciseId}`);
 
       setExercise(response.data);
@@ -55,6 +85,8 @@ export function Exercise() {
         placement: "top",
         bgColor: "red.500",
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -84,26 +116,30 @@ export function Exercise() {
           </Heading>
           <HStack alignItems="center">
             <BodySvg />
-            <Text color="gray.200" ml={1} textTransform="capitalize">{exercisePlus.group}</Text>
+            <Text color="gray.200" ml={1} textTransform="capitalize">
+              {exercisePlus.group}
+            </Text>
           </HStack>
         </HStack>
       </VStack>
 
-      <ScrollView>
+      {isLoading ? (
+        <Loading />
+      ) : (
         <VStack p={8}>
           <Box rounded="lg" mb={3} overflow="hidden">
             {exercisePlus.demo && (
-            <Image
-              w="full"
-              h={80}
-              source={{
-                uri: `${api.defaults.baseURL}/exercise/demo/${exercisePlus?.demo}`,
-              }}
-              alt="Nome do exercício"
-              resizeMode="cover"
-              rounded="lg"
-            />
-          )}
+              <Image
+                w="full"
+                h={80}
+                source={{
+                  uri: `${api.defaults.baseURL}/exercise/demo/${exercisePlus?.demo}`,
+                }}
+                alt="Nome do exercício"
+                resizeMode="cover"
+                rounded="lg"
+              />
+            )}
           </Box>
 
           <Box bg="gray.600" rounded="md" pb={4} px={4}>
@@ -130,10 +166,14 @@ export function Exercise() {
               </HStack>
             </HStack>
 
-            <Button title="Marcar como realizado" />
+            <Button 
+              title="Marcar como realizado"
+              isLoading={sendingRegister}
+              onPress={handleExerciseHistoryRegister}  
+            />
           </Box>
         </VStack>
-      </ScrollView>
+      )}
     </VStack>
   );
 }
