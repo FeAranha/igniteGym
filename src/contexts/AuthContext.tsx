@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useState, useEffect } from "react";
+import { createContext, ReactNode, useState, useEffect } from "react"
 
 import {
   storageAuthTokenSave,
@@ -33,93 +33,94 @@ export const AuthContext = createContext<AuthContextDataProps>(
 );
 
 export function AuthContextProvider({ children }: AuthContextProviderProps) {
-  const [user, setUser] = useState<UserDTO>({} as UserDTO);
+  const [user, setUser] = useState<UserDTO>({} as UserDTO)
   const [isLoadingUserStorageData, setIsLoadingUserStorageData] =
-    useState(true);
+    useState(true)
 
   async function userAndTokenUpdate(userData: UserDTO, token: string) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`
 
-    setUser(userData);
+    setUser(userData)
   }
 
-  async function storageUserAndTokenSave(userData: UserDTO, token: string) {
+  async function storageUserAndTokenSave(userData: UserDTO, token: string, refresh_token: string) {
     try {
-      setIsLoadingUserStorageData(true);
+      setIsLoadingUserStorageData(true)
 
-      await storageUserSave(userData);
-      await storageAuthTokenSave(token);
+      await storageUserSave(userData)
+      await storageAuthTokenSave({ token, refresh_token })
+      
     } catch (error) {
-      throw error;
+      throw error
     } finally {
-      setIsLoadingUserStorageData(false);
+      setIsLoadingUserStorageData(false)
     }
   }
 
   async function singIn(email: string, password: string) {
     try {
-      const { data } = await api.post("/sessions", { email, password });
+      const { data } = await api.post("/sessions", { email, password })
 
-      if (data.user && data.token) {
-        await storageUserAndTokenSave(data.user, data.token);
-        userAndTokenUpdate(data.user, data.token);
+      if (data.user && data.token && data.refresh_token){
+        await storageUserAndTokenSave(data.user, data.token, data.refresh_token)
+        userAndTokenUpdate(data.user, data.token)
       }
     } catch (error) {
-      throw error;
+      throw error
     } finally {
-      setIsLoadingUserStorageData(false);
+      setIsLoadingUserStorageData(false)
     }
   }
 
   async function signOut() {
     try {
-      setIsLoadingUserStorageData(true);
-      setUser({} as UserDTO);
-      await storageUserRemove();
-      await storageAuthTokenRemove();
+      setIsLoadingUserStorageData(true)
+      setUser({} as UserDTO)
+      await storageUserRemove()
+      await storageAuthTokenRemove()
       
     } catch (error) {
-      throw error;
+      throw error
     } finally {
-      setIsLoadingUserStorageData(false);
+      setIsLoadingUserStorageData(false)
     }
   }
 
   async function updateUserProfile(userUpdated: UserDTO) {
     try {
-      setUser(userUpdated);
-      await storageUserSave(userUpdated);
+      setUser(userUpdated)
+      await storageUserSave(userUpdated)
     } catch (error) {
-      throw error;
+      throw error
     }
   }
 
   async function loadUserData() {
     try {
-      setIsLoadingUserStorageData(true);
+      setIsLoadingUserStorageData(true)
       
-      const userLogged = await storageUserGet();
-      const token = await storageAuthTokenGet();
+      const userLogged = await storageUserGet()
+      const { token } = await storageAuthTokenGet()
 
       if (token && userLogged) {
-        userAndTokenUpdate(userLogged, token);
+        userAndTokenUpdate(userLogged, token)
       }
     } catch (error) {
-      throw error;
+      throw error
     } finally {
-      setIsLoadingUserStorageData(false);
+      setIsLoadingUserStorageData(false)
     }
   }
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    loadUserData()
+  }, [])
 
   useEffect(() => {
-    const subscribe = api.registerInterceptTokenManager(signOut);
+    const subscribe = api.registerInterceptTokenManager(signOut)
 
     return () => {
-      subscribe();
+      subscribe()
     }
   },[])
 
@@ -134,5 +135,5 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
